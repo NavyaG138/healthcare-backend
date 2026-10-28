@@ -74,3 +74,99 @@ class PatientTests(APITestCase):
             format="json",
         )
         self.assertEqual(zero_age.status_code, 201)
+
+
+    
+    
+    def test_owner_can_update_patient(self):
+        patient = Patient.objects.create(
+            name="Ravi",
+            age=30,
+            gender="M",
+            created_by=self.user,
+        )
+        url = reverse("patient-detail", args=[patient.id])
+
+        res = self.client.put(
+            url,
+            {"name": "Ravi Kumar", "age": 31, "gender": "M"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, 200)
+        patient.refresh_from_db()
+        self.assertEqual(patient.name, "Ravi Kumar")
+        self.assertEqual(patient.age, 31)
+
+    def test_owner_can_partially_update_patient(self):
+        patient = Patient.objects.create(
+            name="Ravi",
+            age=30,
+            gender="M",
+            created_by=self.user,
+        )
+        url = reverse("patient-detail", args=[patient.id])
+
+        res = self.client.patch(
+            url,
+            {"name": "Ravi Kumar"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, 200)
+        patient.refresh_from_db()
+        self.assertEqual(patient.name, "Ravi Kumar")
+        self.assertEqual(patient.age, 30)
+
+    def test_owner_can_delete_patient(self):
+        patient = Patient.objects.create(
+            name="Ravi",
+            age=30,
+            gender="M",
+            created_by=self.user,
+        )
+        url = reverse("patient-detail", args=[patient.id])
+
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, 204)
+        self.assertFalse(Patient.objects.filter(id=patient.id).exists())
+
+    def test_cannot_put_someone_elses_patient(self):
+        patient = Patient.objects.create(
+            name="Not mine",
+            age=40,
+            gender="M",
+            created_by=self.other,
+        )
+        url = reverse("patient-detail", args=[patient.id])
+
+        res = self.client.put(
+            url,
+            {"name": "Changed", "age": 41, "gender": "F"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, 404)
+        patient.refresh_from_db()
+        self.assertEqual(patient.name, "Not mine")
+        self.assertEqual(patient.age, 40)
+
+
+
+    
+    def test_invalid_gender_rejected(self):
+        res = self.client.post(
+            reverse("patient-list"),
+            {"name": "Ravi", "age": 30, "gender": "INVALID"},
+            format="json",
+        )
+        self.assertEqual(res.status_code, 400)
+
+    def test_whitespace_only_name_rejected(self):
+        res = self.client.post(
+            reverse("patient-list"),
+            {"name": "   ", "age": 30, "gender": "M"},
+            format="json",
+        )
+        self.assertEqual(res.status_code, 400)

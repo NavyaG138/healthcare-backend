@@ -11,6 +11,18 @@
     {
       "key": "access_token",
       "value": ""
+    },
+    {
+      "key": "patient_id",
+      "value": ""
+    },
+    {
+      "key": "doctor_id",
+      "value": ""
+    },
+    {
+      "key": "mapping_id",
+      "value": ""
     }
   ],
   "item": [
@@ -128,7 +140,24 @@
               "mode": "raw",
               "raw": "{\n  \"name\": \"Ravi Kumar\",\n  \"age\": 34,\n  \"gender\": \"M\",\n  \"phone\": \"9876543210\",\n  \"address\": \"Noida\",\n  \"medical_history\": \"Asthma\"\n}"
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Patient created successfully\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property(\"id\");",
+                  "    pm.collectionVariables.set(\"patient_id\", String(data.id));",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "List patients",
@@ -173,14 +202,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/patients/1/",
+              "raw": "{{base_url}}/api/patients/{{patient_id}}/",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "patients",
-                "1"
+                "{{patient_id}}"
               ]
             },
             "auth": {
@@ -206,14 +235,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/patients/1/",
+              "raw": "{{base_url}}/api/patients/{{patient_id}}/",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "patients",
-                "1"
+                "{{patient_id}}"
               ]
             },
             "auth": {
@@ -243,14 +272,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/patients/1/",
+              "raw": "{{base_url}}/api/patients/{{patient_id}}/",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "patients",
-                "1"
+                "{{patient_id}}"
               ]
             },
             "auth": {
@@ -304,7 +333,24 @@
               "mode": "raw",
               "raw": "{\n  \"name\": \"Meera Iyer\",\n  \"specialization\": \"Cardiology\",\n  \"experience_years\": 12,\n  \"email\": \"meera@hospital.com\",\n  \"phone\": \"9123456780\"\n}"
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Doctor created successfully\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property(\"id\");",
+                  "    pm.collectionVariables.set(\"doctor_id\", String(data.id));",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "List doctors",
@@ -349,14 +395,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/doctors/1/",
+              "raw": "{{base_url}}/api/doctors/{{doctor_id}}/",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "doctors",
-                "1"
+                "{{doctor_id}}"
               ]
             },
             "auth": {
@@ -382,14 +428,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/doctors/1/",
+              "raw": "{{base_url}}/api/doctors/{{doctor_id}}/",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "doctors",
-                "1"
+                "{{doctor_id}}"
               ]
             },
             "auth": {
@@ -419,14 +465,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/doctors/1/",
+              "raw": "{{base_url}}/api/doctors/{{doctor_id}}/",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "doctors",
-                "1"
+                "{{doctor_id}}"
               ]
             },
             "auth": {
@@ -478,9 +524,35 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"patient\": 1,\n  \"doctor\": 1\n}"
+              "raw": "{\n  \"patient\": {{patient_id}},\n  \"doctor\": {{doctor_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Doctor assigned successfully\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    const data = pm.response.json();",
+                  "",
+                  "    if (data.id !== undefined) {",
+                  "        pm.collectionVariables.set(\"mapping_id\", String(data.id));",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "List mappings",
@@ -525,14 +597,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/mappings/1/",
+              "raw": "{{base_url}}/api/mappings/{{patient_id}}/",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "mappings",
-                "1"
+                "{{patient_id}}"
               ]
             },
             "auth": {
@@ -558,14 +630,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/mappings/1/",
+              "raw": "{{base_url}}/api/mappings/{{mapping_id}}/",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "mappings",
-                "1"
+                "{{mapping_id}}"
               ]
             },
             "auth": {

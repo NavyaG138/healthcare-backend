@@ -382,21 +382,37 @@ python manage.py test doctors
 python manage.py test mappings
 ```
 
+
 ## Manual API Testing with Postman
 
 The project includes `postman_collection.json`.
 
-1. Open Postman and import the collection.
-2. Start the Django development server.
-3. Register a test user.
-4. Log in and obtain an access token.
-5. Confirm that the collection's authentication variable is populated, or provide the access token manually in the Bearer Token field.
-6. Create and list patients.
-7. Create and list doctors.
-8. Create a patient-doctor mapping and retrieve the doctors assigned to that patient.
-9. Verify ownership restrictions using a second test account if needed.
+### Import and configure
 
-Use test records for manual verification. Avoid running destructive delete requests against records you need to keep.
+1. Open Postman and import `postman_collection.json`.
+2. Start the Django development server using `python manage.py runserver`.
+3. Open the collection's **Variables** tab and confirm `base_url` is `http://127.0.0.1:8000`.
+4. Register a test account using **Auth → Register** if the account does not already exist.
+5. Run **Auth → Login**. The post-response script automatically saves the returned access token in the `access_token` collection variable.
+
+### Recommended request order
+
+1. **Auth → Login** — obtain a current access token.
+2. **Patients → Add patient** — create a patient and save its ID as `patient_id`.
+3. **Patients → List patients**, **Get patient**, and **Update patient** — verify patient operations.
+4. **Doctors → Add doctor** — create a doctor and save its ID as `doctor_id`.
+5. **Doctors → List doctors**, **Get doctor**, and **Update doctor** — verify doctor operations.
+6. **Mappings → Assign doctor to patient** — assign the saved patient and doctor IDs. The response script saves the new mapping ID as `mapping_id`.
+7. **Mappings → List mappings** and **Doctors of a patient** — verify the assignment.
+
+The collection uses `{{access_token}}`, `{{patient_id}}`, `{{doctor_id}}`, and `{{mapping_id}}` to avoid relying on fixed database IDs. The relevant creation requests must succeed before their saved IDs can be used. If a patient, doctor, or mapping already exists, the API may reject a duplicate creation request; use existing records or a fresh test account/data set as appropriate.
+
+### Deletion requests
+
+The collection includes **Delete patient**, **Delete doctor**, and **Remove mapping** requests. Run them only when you intend to delete those records. Deleting a patient or doctor also removes its associated mappings because the foreign keys use cascade deletion.
+
+Use synthetic test records for manual verification. Avoid running destructive requests against records you need to keep.
+
 
 ## Common HTTP Status Codes
 
@@ -455,6 +471,3 @@ Use the documented trailing slashes, particularly for `PUT` and `PATCH` requests
 - Use HTTPS and appropriate production security settings when deploying the API.
 - Use synthetic or authorized test data when testing healthcare-related functionality.
 
-## License
-
-Add the applicable license here if the project is distributed under a specific license.

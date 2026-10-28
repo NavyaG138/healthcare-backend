@@ -64,3 +64,49 @@ class MappingTests(APITestCase):
         self.client.force_authenticate(None)
         res = self.client.get(reverse("mapping-list"))
         self.assertEqual(res.status_code, 401)
+
+
+    
+
+    def test_nonexistent_patient_or_doctor_rejected(self):
+        missing_patient = self.client.post(
+            reverse("mapping-list"),
+            {"patient": 999999, "doctor": self.doctor.id},
+            format="json",
+        )
+        self.assertEqual(missing_patient.status_code, 400)
+
+        missing_doctor = self.client.post(
+            reverse("mapping-list"),
+            {"patient": self.patient.id, "doctor": 999999},
+            format="json",
+        )
+        self.assertEqual(missing_doctor.status_code, 400)
+
+
+    
+
+    def test_deleting_patient_removes_mapping(self):
+        mapping = PatientDoctorMapping.objects.create(
+            patient=self.patient,
+            doctor=self.doctor,
+        )
+
+        self.patient.delete()
+
+        self.assertFalse(
+            PatientDoctorMapping.objects.filter(id=mapping.id).exists()
+        )
+
+
+    def test_deleting_doctor_removes_mapping(self):
+        mapping = PatientDoctorMapping.objects.create(
+            patient=self.patient,
+            doctor=self.doctor,
+        )
+
+        self.doctor.delete()
+
+        self.assertFalse(
+            PatientDoctorMapping.objects.filter(id=mapping.id).exists()
+        )

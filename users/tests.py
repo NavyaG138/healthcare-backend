@@ -78,3 +78,116 @@ class AuthTests(APITestCase):
             format="json",
         )
         self.assertEqual(res.status_code, 400)
+
+
+
+
+    def test_create_superuser_sets_required_flags(self):
+        admin = User.objects.create_superuser(
+            email="admin@example.com",
+            password="AdminPass!234",
+            name="Admin",
+        )
+        self.assertTrue(admin.is_active)
+        self.assertTrue(admin.is_staff)
+        self.assertTrue(admin.is_superuser)
+        self.assertTrue(admin.check_password("AdminPass!234"))
+
+    def test_create_superuser_rejects_is_staff_false(self):
+        with self.assertRaises(ValueError):
+            User.objects.create_superuser(
+                email="admin@example.com",
+                password="AdminPass!234",
+                name="Admin",
+                is_staff=False,
+            )
+
+    def test_create_superuser_rejects_is_superuser_false(self):
+        with self.assertRaises(ValueError):
+            User.objects.create_superuser(
+                email="admin@example.com",
+                password="AdminPass!234",
+                name="Admin",
+                is_superuser=False,
+            )
+
+
+
+    
+    def test_malformed_email_rejected(self):
+        res = self.client.post(
+            reverse("register"),
+            {
+                "name": "Asha",
+                "email": "not-an-email",
+                "password": "Str0ngPass!23",
+            },
+            format="json",
+        )
+        self.assertEqual(res.status_code, 400)
+
+    def test_missing_registration_fields_rejected(self):
+        payloads = [
+            {"email": "missing@example.com", "password": "Str0ngPass!23"},
+            {"name": "Asha", "password": "Str0ngPass!23"},
+            {"name": "Asha", "email": "missing@example.com"},
+        ]
+
+        for payload in payloads:
+            with self.subTest(payload=payload):
+                res = self.client.post(
+                    reverse("register"),
+                    payload,
+                    format="json",
+                )
+                self.assertEqual(res.status_code, 400)
+
+    def test_login_email_whitespace_and_case_normalized(self):
+        User.objects.create_user(
+            email="asha@example.com",
+            password="Str0ngPass!23",
+            name="Asha",
+        )
+
+        res = self.client.post(
+            reverse("login"),
+            {
+                "email": "  ASHA@Example.COM  ",
+                "password": "Str0ngPass!23",
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("access", res.data)
+        self.assertEqual(res.data["user"]["email"], "asha@example.com")
+
+
+
+    
+    def test_refresh_token_returns_new_access_token(self):
+        User.objects.create_user(
+            email="refresh@example.com",
+            password="Str0ngPass!23",
+            name="Refresh Test",
+        )
+
+        login_res = self.client.post(
+            reverse("login"),
+            {
+                "email": "refresh@example.com",
+                "password": "Str0ngPass!23",
+            },
+            format="json",
+        )
+        self.assertEqual(login_res.status_code, 200)
+        self.assertIn("refresh", login_res.data)
+
+        refresh_res = self.client.post(
+            reverse("token-refresh"),
+            {"refresh": login_res.data["refresh"]},
+            format="json",
+        )
+
+        self.assertEqual(refresh_res.status_code, 200)
+        self.assertIn("access", refresh_res.data)
